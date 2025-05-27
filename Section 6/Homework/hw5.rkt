@@ -22,7 +22,19 @@
 
 ;; Problem 1
 
-;; CHANGE (put your solutions here)
+(define (racketlist->mupllist e)
+  (cond [(empty? e) (aunit)]
+        [(list? e) (apair (car e) (racketlist->mupllist (cdr e)))]
+        [#t (error "racketlist->mupllist expected a list")]))
+
+(define (mupllist->racketlist e)
+  (cond [(aunit? e) empty]
+        [(apair? e) (let ([v1 (apair-e1 e)]
+                          [v2 (apair-e2 e)])
+                      (cons v1 (mupllist->racketlist v2)))]
+        [#t (error "mupllist->racketlist expected an apair")]))
+
+;; (mupllist->racketlist (apair (int 3) (apair (int 4) (aunit))))
 
 ;; Problem 2
 
@@ -38,9 +50,9 @@
 ;; We will test eval-under-env by calling it directly even though
 ;; "in real life" it would be a helper function of eval-exp.
 (define (eval-under-env e env)
-  (cond [(var? e) 
+  (cond [(var? e)
          (envlookup env (var-string e))]
-        [(add? e) 
+        [(add? e)
          (let ([v1 (eval-under-env (add-e1 e) env)]
                [v2 (eval-under-env (add-e2 e) env)])
            (if (and (int? v1)
@@ -48,7 +60,24 @@
                (int (+ (int-num v1) 
                        (int-num v2)))
                (error "MUPL addition applied to non-number")))]
-        ;; CHANGE add more cases here
+        ;; Added more cases here as per instructions
+        [(int? e) e]
+        [(ifgreater? e)
+         (let ([v1 (eval-under-env (ifgreater-e1 e) env)]
+               [v2 (eval-under-env (ifgreater-e2 e) env)]
+               [v3 (eval-under-env (ifgreater-e3 e) env)]
+               [v4 (eval-under-env (ifgreater-e4 e) env)])
+           (if (and (int? v1)
+                    (int? v2))
+               (if (> (int-num v1) (int-num v2))
+                   v3
+                   v4)
+               (error "MUPL ifgreater applied to non-number")))]
+        [{mlet? e} (eval-under-env (mlet-body e)
+                                   (append env
+                                           (list (cons (mlet-var e)
+                                                       (eval-under-env (mlet-e e) env)))))]
+               
         [#t (error (format "bad MUPL expression: ~v" e))]))
 
 ;; Do NOT change
@@ -56,7 +85,6 @@
   (eval-under-env e null))
         
 ;; Problem 3
-
 (define (ifaunit e1 e2 e3) "CHANGE")
 
 (define (mlet* lstlst e2) "CHANGE")
